@@ -22,12 +22,12 @@ node {
                 stage 'Build'
                 sh 'go build -o beet .'
 
-                if (${BRANCH_NAME} == 'master') {
+                if (env.BRANCH_NAME == 'master') {
                     stage 'Deploy'
                     withCredentials([string(credentialsId: 'DEPLOY_PATH', variable: 'DEPLOY_PATH')]) {
                         sh 'cp -fp ${WORKSPACE}/beet ${DEPLOY_PATH}/bin/'
                     }
-                    sh '/sbin/service beet restart'
+                    sh 'sudo /sbin/service beet restart'
                 }
             }
         }

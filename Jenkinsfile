@@ -24,7 +24,7 @@ node {
 
                 stage 'Deploy'
                 withCredentials([string(credentialsId: 'DEPLOY_PATH', variable: 'DEPLOY_PATH')]) {
-                    sh 'cp -fp ${WORKSPACE}/src/beet ${DEPLOY_PATH}/bin/'
+                    sh 'cp -fp ${WORKSPACE}/bin/beet ${DEPLOY_PATH}/bin/'
                 }
                 sh '/sbin/service beet restart'
             }

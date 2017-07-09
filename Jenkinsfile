@@ -20,7 +20,13 @@ node {
                 sh 'go vet .'
                 
                 stage 'Build'
-                sh 'go build .'
+                sh 'go build -o beet .'
+
+                stage 'Deploy'
+                withCredentials([string(credentialsId: 'DEPLOY_PATH', variable: 'DEPLOY_PATH')]) {
+                    sh 'cp -fp ${WORKSPACE}/bin/beet ${DEPLOY_PATH/bin/'
+                }
+                sh '/sbin/service beet restart'
             }
         }
     } catch (e) {

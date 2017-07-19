@@ -92,7 +92,7 @@ func codeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/price", priceHandler)
-	http.HandleFunc("/code", codeHandler)
+	http.HandleFunc("/price/", priceHandler)
+	http.HandleFunc("/code/", codeHandler)
 	http.ListenAndServe(":28080", nil)
 }

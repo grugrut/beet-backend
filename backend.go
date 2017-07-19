@@ -54,14 +54,45 @@ func getPriceArray(tcode string) string {
 	return result
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
+func getCodeArray() string {
+	var result string = "["
+	db, err := sql.Open("postgres", "user="+db_user+" dbname="+db_name+" password="+db_pass+" sslmode=disable host=localhost")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
+	rows, err := db.Query("SELECT id, name FROM stocks")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id string
+		var name string
+		rows.Scan(&id, &name)
+		result += fmt.Sprintf("['%v', '%v'],", id, name)
+	}
+	result = strings.TrimRight(result, ",")
+	result += "]"
+	return result
+}
+
+func priceHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	response := getPriceArray(r.URL.Path[1:])
 	fmt.Fprint(w, response)
 }
 
+func codeHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	response := getCodeArray()
+	fmt.Fprint(w, response)
+}
+
 func main() {
-	http.HandleFunc("/", viewHandler)
+	http.HandleFunc("/price", priceHandler)
+	http.HandleFunc("/code", codeHandler)
 	http.ListenAndServe(":28080", nil)
 }

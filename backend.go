@@ -81,7 +81,7 @@ func getCodeArray() string {
 
 func priceHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
-	response := getPriceArray(r.URL.Path[1:])
+	response := getPriceArray(r.URL.Path[len("price/"):])
 	fmt.Fprint(w, response)
 }
 

@@ -24,13 +24,25 @@ var db_user = os.Getenv("DBUSER")
 var db_pass = os.Getenv("DBPASSWORD")
 var db_name = os.Getenv("DBNAME")
 
-func getPriceArray(tcode string) string {
-	var result string = "["
-	db, err := sql.Open("postgres", "user="+db_user+" dbname="+db_name+" password="+db_pass+" sslmode=disable host=localhost")
-	if err != nil {
-		log.Fatal(err)
+func withData(db *sql.DB, f http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		thisDB := db
+		defer thisDB.Close()
+		SetVar(r, "db", thisDB)
+		f(w, r)
 	}
-	defer db.Close()
+}
+
+func withVars(fn http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		OpenVars(r)
+		defer CloseVars(r)
+		fn(w, r)
+	}
+}
+
+func getPriceArray(db *sql.DB, tcode string) string {
+	var result string = "["
 
 	rows, err := db.Query("SELECT stock_id, target_date, open, high, low, close, volume FROM prices WHERE stock_id=$1 order by target_date", tcode)
 	if err != nil {
@@ -54,14 +66,8 @@ func getPriceArray(tcode string) string {
 	return result
 }
 
-func getCodeArray() string {
+func getCodeArray(db *sql.DB) string {
 	var result string = "["
-	db, err := sql.Open("postgres", "user="+db_user+" dbname="+db_name+" password="+db_pass+" sslmode=disable host=localhost")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
 	rows, err := db.Query("SELECT id, name FROM stocks")
 	if err != nil {
 		log.Fatal(err)
@@ -81,18 +87,24 @@ func getCodeArray() string {
 
 func priceHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
-	response := getPriceArray(r.URL.Path[len("price/"):])
+	response := getPriceArray(GetVar(r, "db").(*sql.DB), r.URL.Path[len("price/"):])
 	fmt.Fprint(w, response)
 }
 
 func codeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
-	response := getCodeArray()
+	response := getCodeArray(GetVar(r, "db").(*sql.DB))
 	fmt.Fprint(w, response)
 }
 
 func main() {
-	http.HandleFunc("/price/", priceHandler)
-	http.HandleFunc("/code/", codeHandler)
+	db, err := sql.Open("postgres", "user="+db_user+" dbname="+db_name+" password="+db_pass+" sslmode=disable host=localhost")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	http.HandleFunc("/price/", withVars(withData(db, priceHandler)))
+	http.HandleFunc("/code/", withVars(withData(db, codeHandler)))
 	http.ListenAndServe(":28080", nil)
 }

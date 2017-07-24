@@ -86,18 +86,31 @@ func getCodeArray(db *sql.DB) string {
 }
 
 func priceHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("priceHandler() : start, r.URL.Path=", r.URL.Path)
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	response := getPriceArray(GetVar(r, "db").(*sql.DB), r.URL.Path[len("price/"):])
 	fmt.Fprint(w, response)
+	log.Println("priceHandler() : end")
 }
 
 func codeHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("codeHandler() : start")
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	response := getCodeArray(GetVar(r, "db").(*sql.DB))
 	fmt.Fprint(w, response)
+	log.Println("codeHandler() : end")
 }
 
 func main() {
+	f, err := os.OpenFile("log/backend.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+
+	if err != nil {
+		log.Fatal("error open file :", err.Error())
+	}
+
+	log.SetOutput(f)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
+
 	db, err := sql.Open("postgres", "user="+db_user+" dbname="+db_name+" password="+db_pass+" sslmode=disable host=localhost")
 	if err != nil {
 		log.Fatal(err)

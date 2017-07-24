@@ -24,7 +24,7 @@ var db_user = os.Getenv("DBUSER")
 var db_pass = os.Getenv("DBPASSWORD")
 var db_name = os.Getenv("DBNAME")
 
-func withHeader(fn http.HandlerFunc) http.HandlerFunc {
+func withHeader(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		f(w, r)

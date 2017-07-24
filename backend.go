@@ -24,20 +24,25 @@ var db_user = os.Getenv("DBUSER")
 var db_pass = os.Getenv("DBPASSWORD")
 var db_name = os.Getenv("DBNAME")
 
-func withData(db *sql.DB, f http.HandlerFunc) http.HandlerFunc {
+func withHeader(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		thisDB := db
-		defer thisDB.Close()
-		SetVar(r, "db", thisDB)
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 		f(w, r)
 	}
 }
 
-func withVars(fn http.HandlerFunc) http.HandlerFunc {
+func withData(db *sql.DB, f http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		SetVar(r, "db", db)
+		f(w, r)
+	}
+}
+
+func withVars(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		OpenVars(r)
 		defer CloseVars(r)
-		fn(w, r)
+		f(w, r)
 	}
 }
 
@@ -87,15 +92,13 @@ func getCodeArray(db *sql.DB) string {
 
 func priceHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("priceHandler() : start, r.URL.Path=", r.URL.Path)
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	response := getPriceArray(GetVar(r, "db").(*sql.DB), r.URL.Path[len("price/"):])
+	response := getPriceArray(GetVar(r, "db").(*sql.DB), r.URL.Path[len("/price/"):])
 	fmt.Fprint(w, response)
 	log.Println("priceHandler() : end")
 }
 
 func codeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("codeHandler() : start")
-	w.Header().Add("Access-Control-Allow-Origin", "*")
 	response := getCodeArray(GetVar(r, "db").(*sql.DB))
 	fmt.Fprint(w, response)
 	log.Println("codeHandler() : end")
@@ -117,7 +120,7 @@ func main() {
 	}
 	defer db.Close()
 
-	http.HandleFunc("/price/", withVars(withData(db, priceHandler)))
-	http.HandleFunc("/code/", withVars(withData(db, codeHandler)))
+	http.HandleFunc("/price/", withHeader(withVars(withData(db, priceHandler))))
+	http.HandleFunc("/code/", withHeader(withVars(withData(db, codeHandler))))
 	http.ListenAndServe(":28080", nil)
 }

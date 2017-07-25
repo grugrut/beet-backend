@@ -18,6 +18,9 @@ node {
                 
                 stage 'Test'
                 sh 'go vet .'
+
+                stage 'postTest'
+                stepcounter settings: [[encoding: 'UTF-8', filePattern: '**/*.go', filePatternExclude: 'vendor/**/*.go', key: 'Go']]
                 
                 stage 'Build'
                 sh 'go build -o beet .'

@@ -10,8 +10,7 @@ pipeline {
     environment {
         GOROOT="${root}"
         GOPATH="${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/"
-        PATH+GO="${root}/bin"
-        PATH="${GOPATH}/bin:$PATH"
+        PATH="${GOROOT}/bin:${GOPATH}/bin:$PATH"
     }
         
     stages {

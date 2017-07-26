@@ -5,7 +5,7 @@ pipeline {
         }
     }
     tools {
-        Go 'Go1.8'
+        go 'Go1.8'
     }
     environment {
         GOROOT="${root}"

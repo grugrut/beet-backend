@@ -1,56 +1,67 @@
-def err_msg = ""
-
-node {
-    try {
-        def root = tool name: 'Go1.8', type: 'go'
-        ws("${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/src/github.com/grugrut/beet-backend") {
-            withEnv(["GOROOT=${root}", "GOPATH=${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/", "PATH+GO=${root}/bin"]) {
-                env.PATH="${GOPATH}/bin:$PATH"
-                
-                stage 'Checkout'
-            
+pipeline {
+    agent {
+        node {
+            customWorkspace "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/src/github.com/grugrut/beet-backend"
+        }
+    }
+    tools {
+        go: 'Go1.8'
+    }
+    environment {
+        GOROOT="${root}"
+        GOPATH="${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/"
+        PATH+GO="${root}/bin"
+        PATH="${GOPATH}/bin:$PATH"
+    }
+        
+    stages {
+        stage ('Checkout') {
+            steps {
                 git url: 'https://github.com/grugrut/beet-backend.git'
-            
-                stage 'preTest'
+            }
+        }
+        stage ('preTest') {
+            steps {
                 sh 'go version'
                 sh 'go get -u github.com/golang/dep/...'
                 sh 'dep init'
-                
-                stage 'Test'
-                sh 'go vet .'
-
-                stage 'postTest'
-                stepcounter settings: [[encoding: 'UTF-8', filePattern: '**/*.go', filePatternExclude: 'vendor/**/*.go', key: 'Go']]
-                
-                stage 'Build'
-                sh 'go build -o beet .'
-
-                if (env.BRANCH_NAME == 'master') {
-                    stage 'Deploy'
-                    withCredentials([string(credentialsId: 'DEPLOY_PATH', variable: 'DEPLOY_PATH')]) {
-                        sh 'cp -fp ${WORKSPACE}/beet ${DEPLOY_PATH}/bin/'
-                    }
-                    sh 'sudo /sbin/service beet restart'
-                }
             }
         }
-    } catch (e) {
-        err_msg = "${e}"
-        currentBuild.result = "FAILURE"
-    } finally {
-        if (currentBuild.result != "FAILURE") {
-            currentBuild.result = "SUCCESS"
+        stage ('Test') {
+            steps {
+                sh 'go vet .'
+                stepcounter settings: [[encoding: 'UTF-8', filePattern: '**/*.go', filePatternExclude: 'vendor/**/*.go', key: 'Go']]
+            }
         }
-        notify(err_msg)
+        stage ('Build') {
+            steps {
+                sh 'go build -o beet .'
+            }
+        }
+        stage ('Deploy') {
+            when {
+                branch 'master'
+            }
+            steps {
+                withCredentials([string(credentialsId: 'DEPLOY_PATH', variable: 'DEPLOY_PATH')]) {
+                    sh 'cp -fp ${WORKSPACE}/beet ${DEPLOY_PATH}/bin/'
+                }
+                sh 'sudo /sbin/service beet restart'
+            }
+        }
     }
-}
-
-def notify(msg) {
-    def detail_link = "(<${env.BUILD_URL}|Open>)"
-    def slack_color = "good"
-    if(currentBuild.result == "FAILURE") {
-        slack_color = "danger"
+    post {
+        success {
+            def detail_link = "(<${env.BUILD_URL}|Open>)"
+            def slack_color = "good"
+            def slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
+            slackSend color: "${slack_color}", message: "${slack_msg}"
+        }
+        failure {
+            def detail_link = "(<${env.BUILD_URL}|Open>)"
+            def slack_color = "danger"
+            def slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
+            slackSend color: "${slack_color}", message: "${slack_msg}"
+        }
     }
-    def slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}\n\n${msg}"
-    slackSend color: "${slack_color}", message: "${slack_msg}"
 }

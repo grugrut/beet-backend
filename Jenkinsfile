@@ -1,7 +1,7 @@
 pipeline {
     agent {
         node {
-            label 'my-node'
+            label 'master'
             customWorkspace "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/src/github.com/grugrut/beet-backend"
         }
     }

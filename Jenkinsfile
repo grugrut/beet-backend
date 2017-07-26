@@ -52,20 +52,14 @@ pipeline {
     }
     post {
         success {
-            step {
-                detail_link = "(<${env.BUILD_URL}|Open>)"
-                slack_color = "good"
-                slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
-                slackSend color: "${slack_color}", message: "${slack_msg}"
-                }
+            notifySlack("good")
         }
         failure {
-            step {
-                detail_link = "(<${env.BUILD_URL}|Open>)"
-                slack_color = "danger"
-                slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
-                slackSend color: "${slack_color}", message: "${slack_msg}"
-            }
+            notifySlack("danger")
         }
     }
+}
+
+def notifySlack(color) {
+    slackSend color: color, message: "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. (<${env.BUILD_URL}|Open>)"
 }

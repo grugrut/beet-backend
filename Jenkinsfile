@@ -1,7 +1,7 @@
 pipeline {
     agent {
         node {
-            label 'my-node'
+            label 'master'
             customWorkspace "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/src/github.com/grugrut/beet-backend"
         }
     }
@@ -9,9 +9,7 @@ pipeline {
         go 'Go1.8'
     }
     environment {
-        GOROOT="${root}"
         GOPATH="${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/"
-        PATH="${GOROOT}/bin:${GOPATH}/bin:$PATH"
     }
         
     stages {
@@ -24,7 +22,7 @@ pipeline {
             steps {
                 sh 'go version'
                 sh 'go get -u github.com/golang/dep/...'
-                sh 'dep init'
+                sh '${GOPATH}/bin/dep init'
             }
         }
         stage ('Test') {

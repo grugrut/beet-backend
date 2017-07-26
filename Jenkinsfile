@@ -1,6 +1,7 @@
 pipeline {
     agent {
         node {
+            label 'my-node'
             customWorkspace "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}/src/github.com/grugrut/beet-backend"
         }
     }
@@ -51,16 +52,20 @@ pipeline {
     }
     post {
         success {
-            detail_link = "(<${env.BUILD_URL}|Open>)"
-            slack_color = "good"
-            slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
-            slackSend color: "${slack_color}", message: "${slack_msg}"
+            step {
+                detail_link = "(<${env.BUILD_URL}|Open>)"
+                slack_color = "good"
+                slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
+                slackSend color: "${slack_color}", message: "${slack_msg}"
+                }
         }
         failure {
-            detail_link = "(<${env.BUILD_URL}|Open>)"
-            slack_color = "danger"
-            slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
-            slackSend color: "${slack_color}", message: "${slack_msg}"
+            step {
+                detail_link = "(<${env.BUILD_URL}|Open>)"
+                slack_color = "danger"
+                slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
+                slackSend color: "${slack_color}", message: "${slack_msg}"
+            }
         }
     }
 }

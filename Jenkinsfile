@@ -5,7 +5,7 @@ pipeline {
         }
     }
     tools {
-        go: 'Go1.8'
+        Go: 'Go1.8'
     }
     environment {
         GOROOT="${root}"
@@ -51,15 +51,15 @@ pipeline {
     }
     post {
         success {
-            def detail_link = "(<${env.BUILD_URL}|Open>)"
-            def slack_color = "good"
-            def slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
+            detail_link = "(<${env.BUILD_URL}|Open>)"
+            slack_color = "good"
+            slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
             slackSend color: "${slack_color}", message: "${slack_msg}"
         }
         failure {
-            def detail_link = "(<${env.BUILD_URL}|Open>)"
-            def slack_color = "danger"
-            def slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
+            detail_link = "(<${env.BUILD_URL}|Open>)"
+            slack_color = "danger"
+            slack_msg = "job ${env.JOB_NAME}[No.${env.BUILD_NUMBER}] was builded ${currentBuild.result}. ${detail_link}"
             slackSend color: "${slack_color}", message: "${slack_msg}"
         }
     }

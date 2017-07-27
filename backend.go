@@ -51,7 +51,8 @@ func getPriceArray(db *sql.DB, tcode string) string {
 
 	rows, err := db.Query("SELECT stock_id, target_date, open, high, low, close, volume FROM prices WHERE stock_id=$1 order by target_date", tcode)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return err.Error()
 	}
 	defer rows.Close()
 
@@ -75,7 +76,8 @@ func getCodeArray(db *sql.DB) string {
 	var result string = "["
 	rows, err := db.Query("SELECT id, name FROM stocks")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return err.Error()
 	}
 	defer rows.Close()
 

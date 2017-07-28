@@ -23,11 +23,14 @@ pipeline {
                 sh 'go version'
                 sh 'go get -u github.com/golang/dep/...'
                 sh '${GOPATH}/bin/dep init'
+                sh 'go get github.com/golang/lint/golint'
+
             }
         }
         stage ('Test') {
             steps {
-                sh 'go vet .'
+                sh 'go vet ./...'
+                sh '${GOPATH}/bin/golint ./...'
                 stepcounter settings: [[encoding: 'UTF-8', filePattern: '**/*.go', filePatternExclude: 'vendor/**/*.go', key: 'Go']]
             }
         }

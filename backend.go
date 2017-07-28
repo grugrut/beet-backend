@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-type Price struct {
+type price struct {
 	Code   string
 	Date   string
 	Open   float64
@@ -20,9 +20,9 @@ type Price struct {
 	Volume int
 }
 
-var db_user = os.Getenv("DBUSER")
-var db_pass = os.Getenv("DBPASSWORD")
-var db_name = os.Getenv("DBNAME")
+var dbUser = os.Getenv("DBUSER")
+var dbPass = os.Getenv("DBPASSWORD")
+var dbName = os.Getenv("DBNAME")
 
 func withHeader(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -46,8 +46,8 @@ func withVars(f http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func getPriceArray(db *sql.DB, tcode string) string {
-	var result string = "["
+func getpriceArray(db *sql.DB, tcode string) string {
+	result := "["
 
 	rows, err := db.Query("SELECT stock_id, target_date, open, high, low, close, volume FROM prices WHERE stock_id=$1 order by target_date", tcode)
 	if err != nil {
@@ -73,7 +73,7 @@ func getPriceArray(db *sql.DB, tcode string) string {
 }
 
 func getCodeArray(db *sql.DB) string {
-	var result string = "["
+	result := "["
 	rows, err := db.Query("SELECT id, name FROM stocks")
 	if err != nil {
 		log.Println(err)
@@ -94,7 +94,7 @@ func getCodeArray(db *sql.DB) string {
 
 func priceHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("priceHandler() : start, r.URL.Path=", r.URL.Path)
-	response := getPriceArray(GetVar(r, "db").(*sql.DB), r.URL.Path[len("/price/"):])
+	response := getpriceArray(GetVar(r, "db").(*sql.DB), r.URL.Path[len("/price/"):])
 	fmt.Fprint(w, response)
 	log.Println("priceHandler() : end")
 }
@@ -116,7 +116,7 @@ func main() {
 	log.SetOutput(f)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
 
-	db, err := sql.Open("postgres", "user="+db_user+" dbname="+db_name+" password="+db_pass+" sslmode=disable host=localhost")
+	db, err := sql.Open("postgres", "user="+dbUser+" dbname="+dbName+" password="+dbPass+" sslmode=disable host=localhost")
 	if err != nil {
 		log.Fatal(err)
 	}

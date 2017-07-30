@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
@@ -20,6 +21,8 @@ type price struct {
 	Volume int
 }
 
+type dbKey struct{}
+
 var dbUser = os.Getenv("DBUSER")
 var dbPass = os.Getenv("DBPASSWORD")
 var dbName = os.Getenv("DBNAME")
@@ -33,22 +36,17 @@ func withHeader(f http.HandlerFunc) http.HandlerFunc {
 
 func withData(db *sql.DB, f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		SetVar(r, "db", db)
+		c := context.Background()
+		c = context.WithValue(c, dbKey{}, db)
 		f(w, r)
 	}
 }
 
-func withVars(f http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		OpenVars(r)
-		defer CloseVars(r)
-		f(w, r)
-	}
-}
+func getpriceArray(tcode string) string {
+	c := context.Background()
+	db := c.Value(dbKey{}).(*sql.DB)
 
-func getpriceArray(db *sql.DB, tcode string) string {
 	result := "["
-
 	rows, err := db.Query("SELECT stock_id, target_date, open, high, low, close, volume FROM prices WHERE stock_id=$1 order by target_date", tcode)
 	if err != nil {
 		log.Println(err)
@@ -72,7 +70,9 @@ func getpriceArray(db *sql.DB, tcode string) string {
 	return result
 }
 
-func getCodeArray(db *sql.DB) string {
+func getCodeArray() string {
+	c := context.Background()
+	db := c.Value(dbKey{}).(*sql.DB)
 	result := "["
 	rows, err := db.Query("SELECT id, name FROM stocks")
 	if err != nil {
@@ -94,21 +94,20 @@ func getCodeArray(db *sql.DB) string {
 
 func priceHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("priceHandler() : start, r.URL.Path=", r.URL.Path)
-	response := getpriceArray(GetVar(r, "db").(*sql.DB), r.URL.Path[len("/price/"):])
+	response := getpriceArray(r.URL.Path[len("/price/"):])
 	fmt.Fprint(w, response)
 	log.Println("priceHandler() : end")
 }
 
 func codeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("codeHandler() : start")
-	response := getCodeArray(GetVar(r, "db").(*sql.DB))
+	response := getCodeArray()
 	fmt.Fprint(w, response)
 	log.Println("codeHandler() : end")
 }
 
 func main() {
 	f, err := os.OpenFile("log/backend.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-
 	if err != nil {
 		log.Fatal("error open file :", err.Error())
 	}
@@ -122,7 +121,7 @@ func main() {
 	}
 	defer db.Close()
 
-	http.HandleFunc("/price/", withHeader(withVars(withData(db, priceHandler))))
-	http.HandleFunc("/code/", withHeader(withVars(withData(db, codeHandler))))
+	http.HandleFunc("/price/", withHeader(withData(db, priceHandler)))
+	http.HandleFunc("/code/", withHeader(withData(db, codeHandler)))
 	http.ListenAndServe(":28080", nil)
 }
